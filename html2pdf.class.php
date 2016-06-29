@@ -819,44 +819,70 @@ class HTML2PDF
      * draw the PDF header with the HTML in page_header
      *
      * @access protected
+     * @param int $startIndex
+     * @return bool|null
      */
-    protected function _setPageHeader()
+    protected function _setPageHeader($startIndex = 0)
     {
         if (!count($this->_subHEADER)) return false;
 
         if (in_array($this->pdf->getPage(), $this->_hideHeader)) return false;
 
-        $oldParsePos = $this->_parsePos;
-        $oldParseCode = $this->parsingHtml->code;
+        for ($i = $startIndex; $i < count($this->_subHEADER); $i++) {
 
-        $this->_parsePos = 0;
-        $this->parsingHtml->code = $this->_subHEADER;
-        $this->_makeHTMLcode();
+            if (array_key_exists('showon', $this->_subHEADER[$i][0]['param']) &&  $this->_subHEADER[$i][0]['param']!='false' && !empty( $this->_subHEADER[$i][0]['param']['showon'])) {
+                $showon = $this->_subHEADER[$i][0]['param']['showon'];
 
-        $this->_parsePos = $oldParsePos;
-        $this->parsingHtml->code = $oldParseCode;
+                if(!preg_match($showon, $this->pdf->getPage())) {
+                    continue;
+                }
+            }
+
+            $oldParsePos  = $this->_parsePos;
+            $oldParseCode = $this->parsingHtml->code;
+
+            $this->_parsePos         = 0;
+            $this->parsingHtml->code = $this->_subHEADER[$i];
+            $this->_makeHTMLcode();
+
+            $this->_parsePos         = $oldParsePos;
+            $this->parsingHtml->code = $oldParseCode;
+        }
     }
 
     /**
      * draw the PDF footer with the HTML in page_footer
      *
      * @access protected
+     * @param int $startIndex
+     * @return bool|null
      */
-    protected function _setPageFooter()
+    protected function _setPageFooter($startIndex = 0)
     {
         if (!count($this->_subFOOTER)) return false;
 
-        $oldParsePos = $this->_parsePos;
-        $oldParseCode = $this->parsingHtml->code;
+        for ($i = $startIndex; $i < count($this->_subFOOTER); $i++) {
 
-        $this->_parsePos = 0;
-        $this->parsingHtml->code = $this->_subFOOTER;
-        $this->_isInFooter = true;
-        $this->_makeHTMLcode();
-        $this->_isInFooter = false;
+            if (array_key_exists('showon', $this->_subFOOTER[$i][0]['param']) &&  $this->_subFOOTER[$i][0]['param']!='false' && !empty( $this->_subFOOTER[$i][0]['param']['showon'])) {
+                $showon = $this->_subFOOTER[$i][0]['param']['showon'];
 
-        $this->_parsePos = $oldParsePos;
-        $this->parsingHtml->code = $oldParseCode;
+                if(!preg_match($showon, $this->pdf->getPage())) {
+                    continue;
+                }
+            }
+
+            $oldParsePos  = $this->_parsePos;
+            $oldParseCode = $this->parsingHtml->code;
+
+            $this->_parsePos         = 0;
+            $this->parsingHtml->code = $this->_subFOOTER[$i];
+            $this->_isInFooter       = true;
+            $this->_makeHTMLcode();
+            $this->_isInFooter = false;
+
+            $this->_parsePos         = $oldParsePos;
+            $this->parsingHtml->code = $oldParseCode;
+        }
     }
 
     /**
@@ -2422,15 +2448,17 @@ class HTML2PDF
     {
         if ($this->_isForOneLine) return false;
 
-        $this->_subHEADER = array();
+        $singleSubHEADER = array();
         for ($this->_parsePos; $this->_parsePos<count($this->parsingHtml->code); $this->_parsePos++) {
             $action = $this->parsingHtml->code[$this->_parsePos];
             if ($action['name']=='page_header') $action['name']='page_header_sub';
-            $this->_subHEADER[] = $action;
+            $singleSubHEADER[] = $action;
             if (strtolower($action['name'])=='page_header_sub' && $action['close']) break;
         }
 
-        $this->_setPageHeader();
+        $this->_subHEADER[] = $singleSubHEADER;
+
+        $this->_setPageHeader(count($this->_subHEADER)-1);
 
         return true;
     }
@@ -2446,15 +2474,17 @@ class HTML2PDF
     {
         if ($this->_isForOneLine) return false;
 
-        $this->_subFOOTER = array();
+        $singleSubFOOTER = array();
         for ($this->_parsePos; $this->_parsePos<count($this->parsingHtml->code); $this->_parsePos++) {
             $action = $this->parsingHtml->code[$this->_parsePos];
             if ($action['name']=='page_footer') $action['name']='page_footer_sub';
-            $this->_subFOOTER[] = $action;
+            $singleSubFOOTER[] = $action;
             if (strtolower($action['name'])=='page_footer_sub' && $action['close']) break;
         }
 
-        $this->_setPageFooter();
+        $this->_subFOOTER[] = $singleSubFOOTER;
+
+        $this->_setPageFooter(count($this->_subFOOTER)-1);
 
         return true;
     }
