@@ -36,8 +36,8 @@
             </tr>
         </table>
     </page_header>
-    <page_footer>
-        <table class="page_footer-impar" showOn="/^\d*[13579]$/">
+    <page_footer showOn="/^\d*[13579]$/">
+        <table class="page_footer-impar">
             <tr>
                 <td style="width: 33%; text-align: left">
                     &copy;Spipu 2008-2015
